@@ -1,18 +1,18 @@
-const { performPucValidation } = require('../services/validationService');
+const { performPucValidation } = require('../services/PUCcheckServices/validationService');
 const VehicleDetails = require('../models/vehicleDetails.model'); 
 const { ResponseHandler } = require('../utils/responseHandler'); 
 const moment = require('moment');
 
 const checkPucValidation = async (req, res) => {
     try {
-        const data = req.body;
+        const { rc_number } = req.body;
 
-        if (!data.rc_number) {
+        if (!rc_number) {
             return ResponseHandler(res, 400, 'RC number is required');
         }
 
         // Check if vehicle data already exists in the database
-        const existingVehicle = await VehicleDetails.findOne({ reg_no: data.rc_number });
+        const existingVehicle = await VehicleDetails.findOne({ reg_no: rc_number });
 
         if (existingVehicle) {
             const message = existingVehicle.vehicle_pucc_details ? "PUC is Valid!!" : "PUC is Invalid!!";
@@ -33,24 +33,28 @@ const checkPucValidation = async (req, res) => {
         }
 
         // Perform external validation if not found in the database
-        const rtoResponse = await performPucValidation(data.rc_number);
+        const rtoResponse = await performPucValidation(rc_number);
 
-        if (rtoResponse.error) {
-            return ResponseHandler(res, 400, `Validation Error: ${rtoResponse.error}`);
+        // Check if the response is valid
+        if (!rtoResponse || !rtoResponse.result) {
+            return ResponseHandler(res, 400, `Validation failed for RC Number ${rc_number}: No data found or invalid response.`);
         }
 
-        const message = rtoResponse.result.vehicle_pucc_details ? "PUC is Valid!!" : "PUC is Invalid!!";
+        const { reg_no, owner_name, model, state, reg_type_descr, vehicle_class_desc, reg_upto, vehicle_pucc_details } = rtoResponse.result;
+
+        const message = vehicle_pucc_details ? "PUC is Valid!!" : "PUC is Invalid!!";
         const checkedOn = moment().format('YYYY-MM-DD');
+
         const formattedData = {
             message,
-            reg_no: rtoResponse.result.reg_no,
-            owner_name: rtoResponse.result.owner_name,
-            model: rtoResponse.result.model,
-            state: rtoResponse.result.state,
-            reg_type_descr: rtoResponse.result.reg_type_descr,
-            vehicle_class_desc: rtoResponse.result.vehicle_class_desc,
-            reg_upto: rtoResponse.result.reg_upto,
-            vehicle_pucc_details: rtoResponse.result.vehicle_pucc_details,
+            reg_no,
+            owner_name,
+            model,
+            state,
+            reg_type_descr,
+            vehicle_class_desc,
+            reg_upto,
+            vehicle_pucc_details,
             checked_on: checkedOn
         };
 
@@ -60,7 +64,7 @@ const checkPucValidation = async (req, res) => {
 
         return ResponseHandler(res, 200, 'PUC details validated and saved successfully', formattedData);
     } catch (error) {
-        console.error(error);
+        console.error('Error:', error);
         return ResponseHandler(res, 500, 'Error Occurred', { error: error.message });
     }
 };

@@ -1,84 +1,82 @@
-const { performPUCValidation } = require("../services/validationService");
-const { VehicleDetails } = require("../models/vehicleDetails.model");
-const { mongoDB } = require("../utils/db");
-const { processExternalImage, processOCR } = require("../services/imageService");
-const fs = require("fs");
-const path = require("path");
+const { processExternalImage } = require("../services/PUCcheckServices/modelApiService");
+const { processOCR } = require("../services/PUCcheckServices/processOCRService");
+const { parseRcNumber } = require("../services/PUCcheckServices/parsingService");
+const { checkPucValidation } = require("../controllers/pucValidationController"); // Import the validation service directly
 
 const processImage = async (req, res) => {
     try {
         console.log("Request received to process image.");
 
-        if (!req.files || !req.files.file) {
-            console.log("File not found in the request.");
-            throw new Error("File not found");
+        // Check for file in the request
+        if (!req.file) {
+            return res.status(400).json({ status: "failed", message: "File not found in request" });
         }
 
-        const file = req.files.file;
-        console.log(`File received: ${file.name}`);
+        const fileBuffer = req.file.buffer;
+        const fileMimeType = req.file.mimetype;
 
-        // Process image with an external API
-        const imageDir = path.join(process.cwd(), "image_dir");
-        const zipFilePath = await processExternalImage(file, imageDir);
+        // Validate file type
+        if (!fileMimeType.startsWith("image/")) {
+            return res.status(400).json({ status: "failed", message: "Invalid file type." });
+        }
 
-        // Process OCR and parse RC numbers
-        const imageProcessedData = await processOCR(zipFilePath, imageDir);
+        // Process the external image
+        const extractedFiles = await processExternalImage(fileBuffer, fileMimeType);
+
+        // Check if files were extracted
+        if (!Array.isArray(extractedFiles) || extractedFiles.length === 0) {
+            return res.status(400).json({ status: "failed", message: "No valid files found in the processed result." });
+        }
+
+        // Perform OCR on the extracted files
+        const extractedTexts = await processOCR(extractedFiles);
+
+        // Parse RC numbers using the service
+        const rcNumbers = parseRcNumber(extractedTexts);
+
+        // Log parsed RC numbers
+        console.log("Parsed RC Numbers:", rcNumbers);
+
+        // Handle no RC numbers detected
+        if (rcNumbers.length === 0) {
+            return res.status(400).json({ status: "failed", message: "No RC numbers detected." });
+        }
 
         const resultRTOInfo = [];
-        for (const rcNumber of imageProcessedData) {
-            console.log(`Checking database for RC number: ${rcNumber}`);
-            const vehicleCollection = mongoDB.collection("puc_info");
-            const existingVehicle = await vehicleCollection.findOne({ reg_no: rcNumber });
 
-            if (existingVehicle) {
-                const vehiclePUCCDetails = existingVehicle.vehicle_pucc_details;
-                resultRTOInfo.push({
-                    message: vehiclePUCCDetails ? "PUC is Valid!!" : "PUC is Invalid!!",
-                    ...existingVehicle,
-                });
-                continue;
+        // Call the checkPucValidation logic for each RC number
+        for (const rcNumber of rcNumbers) {
+            try {
+                const mockReq = { body: { rc_number: rcNumber } }; // Create a mock request
+                const mockRes = {
+                    status: (code) => ({
+                        json: (response) => ({ statusCode: code, response }),
+                    }),
+                };
+
+                // Invoke the checkPucValidation function directly
+                const response = await checkPucValidation(mockReq, mockRes);
+
+                if (response.statusCode === 200 && response.response.status === "success") {
+                    resultRTOInfo.push(response.response.data);
+                } else {
+                    console.warn(`Validation failed for RC Number ${rcNumber}:, response.response.message`);
+                }
+            } catch (error) {
+                console.error(`Error validating RC Number ${rcNumber}:, error.message`);
             }
-
-            // Perform PUC validation for new RC numbers
-            const validationResponse = await performPUCValidation(rcNumber);
-
-            if (validationResponse.error) {
-                return res.status(400).json({
-                    status: "failed",
-                    message: "Validation Error",
-                    error: validationResponse.error,
-                });
-            }
-
-            const { result } = validationResponse;
-            const message = result.vehicle_pucc_details
-                ? "PUC is Valid!!"
-                : "PUC is Invalid!!";
-
-            const vehicleDetails = new VehicleDetails(result);
-            await vehicleDetails.save();
-
-            resultRTOInfo.push({ message, ...result });
         }
 
+        // Return success response
         res.status(200).json({
             status: "success",
-            message: "Image processing done successfully",
+            message: "Image processing completed successfully.",
             response: resultRTOInfo,
         });
     } catch (error) {
-        console.error(`Error occurred: ${error.message}`);
-        res.status(500).json({
-            status: "failed",
-            message: "Error occurred",
-            error: error.message,
-        });
-    } finally {
-        const imageDir = path.join(process.cwd(), "image_dir");
-        if (fs.existsSync(imageDir)) {
-            fs.rmSync(imageDir, { recursive: true, force: true });
-            console.log(`${imageDir} has been removed successfully.`);
-        }
+        // Log error and send failure response
+        console.error("Error:", error);
+        res.status(500).json({ status: "failed", message: error.message });
     }
 };
 
