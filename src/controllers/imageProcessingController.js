@@ -25,26 +25,19 @@ const processImage = async (req, res) => {
             return res.status(400).json({ status: "failed", message: error });
         }
 
-        // Process the external image
         const extractedFiles = await processExternalImage(fileBuffer, fileMimeType);
 
-        // Check if files were extracted
         if (!Array.isArray(extractedFiles) || extractedFiles.length === 0) {
             const error = "No valid files found in the processed result.";
             websocketService.emitPUCValidationError(error);
             return res.status(400).json({ status: "failed", message: error });
         }
 
-        // Perform OCR on the extracted files
         const extractedTexts = await processOCR(extractedFiles);
-
-        // Parse RC numbers using the service
         const rcNumbers = parseRcNumber(extractedTexts);
 
-        // Log parsed RC numbers
         console.log("Parsed RC Numbers:", rcNumbers);
 
-        // Handle no RC numbers detected
         if (rcNumbers.length === 0) {
             const error = "No RC numbers detected.";
             websocketService.emitPUCValidationError(error);
@@ -53,23 +46,29 @@ const processImage = async (req, res) => {
 
         const resultRTOInfo = [];
 
-        // Call the checkPucValidation logic for each RC number
+        // Modified this section to handle database responses correctly
         for (const rcNumber of rcNumbers) {
             try {
                 const mockReq = { body: { rc_number: rcNumber } };
+                let responseData = null;
+
+                // Use a custom response handler to capture the response
                 const mockRes = {
                     status: (code) => ({
-                        json: (response) => ({ statusCode: code, response }),
-                    }),
+                        json: (response) => {
+                            responseData = { statusCode: code, response };
+                            return responseData;
+                        }
+                    })
                 };
 
-                // Invoke the checkPucValidation function directly
-                const response = await checkPucValidation(mockReq, mockRes);
+                // Call checkPucValidation and capture its response
+                await checkPucValidation(mockReq, mockRes);
 
-                if (response.statusCode === 200 && response.response.status === "success") {
-                    resultRTOInfo.push(response.response.data);
+                if (responseData && responseData.statusCode === 200) {
+                    resultRTOInfo.push(responseData.response.data);
                 } else {
-                    const error = `Validation failed for RC Number ${rcNumber}: ${response.response.message}`;
+                    const error = `Validation failed for RC Number ${rcNumber}: ${responseData?.response?.message || 'Unknown error'}`;
                     console.warn(error);
                     websocketService.emitPUCValidationError(error);
                 }
@@ -80,22 +79,19 @@ const processImage = async (req, res) => {
             }
         }
 
-        // If we have results, emit them via WebSocket
         if (resultRTOInfo.length > 0) {
             websocketService.emitPUCValidationResult(resultRTOInfo);
         }
 
-        // Return success response
-        res.status(200).json({
+        return res.status(200).json({
             status: "success",
             message: "Image processing completed successfully.",
             response: resultRTOInfo,
         });
     } catch (error) {
-        // Log error and send failure response
         console.error("Error:", error);
         websocketService.emitPUCValidationError(error.message);
-        res.status(500).json({ status: "failed", message: error.message });
+        return res.status(500).json({ status: "failed", message: error.message });
     }
 };
 

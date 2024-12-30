@@ -15,6 +15,9 @@ const checkPucValidation = async (req, res) => {
         const existingVehicle = await VehicleDetails.findOne({ reg_no: rc_number });
 
         if (existingVehicle) {
+            console.log('Vehicle found in database:', rc_number);
+            
+            // Format the response data from existing vehicle
             const message = existingVehicle.vehicle_pucc_details ? "PUC is Valid!!" : "PUC is Invalid!!";
             const formattedData = {
                 message,
@@ -29,10 +32,13 @@ const checkPucValidation = async (req, res) => {
                 checked_on: existingVehicle.checked_on || moment().format('YYYY-MM-DD')
             };
 
-            return ResponseHandler(res, 200, 'PUC details fetched successfully', formattedData);
+            // Return the data from database directly without making external API call
+            return ResponseHandler(res, 200, 'PUC details fetched from database', formattedData);
         }
 
-        // Perform external validation if not found in the database
+        console.log('Vehicle not found in database, performing external validation:', rc_number);
+
+        // Only perform external validation if not found in the database
         const rtoResponse = await performPucValidation(rc_number);
 
         // Check if the response is valid

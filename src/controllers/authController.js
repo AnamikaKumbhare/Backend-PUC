@@ -11,7 +11,7 @@ const handleLogin = async (req, res) => {
         if (!email || !password || !user_type) {
             return res.status(400).json({
                 status: "failed",
-                message: "Email, Password, and User Type are required"
+                message: "Email, Password, and User Type are required",
             });
         }
 
@@ -21,7 +21,7 @@ const handleLogin = async (req, res) => {
         if (!user) {
             return res.status(404).json({
                 status: "failed",
-                message: "User not found, please register"
+                message: "User not found, please register",
             });
         }
 
@@ -30,17 +30,21 @@ const handleLogin = async (req, res) => {
         if (!isPasswordCorrect) {
             return res.status(401).json({
                 status: "failed",
-                message: "Invalid password"
+                message: "Invalid password",
             });
         }
 
         // Generate JWT token
         const token = generateToken(user._id, user.toObject());
 
+        // Save token in the user document
+        user.token = token;
+        await user.save();
+
         return res.status(200).json({
             status: "success",
             message: "Login successful",
-            token
+            token,
         });
 
     } catch (error) {
@@ -48,7 +52,7 @@ const handleLogin = async (req, res) => {
         return res.status(500).json({
             status: "failed",
             message: "An error occurred during login",
-            error: error.message
+            error: error.message,
         });
     }
 };
@@ -62,7 +66,7 @@ const handleSignup = async (req, res) => {
         if (!username || !email || !password || !confirm_password || !user_type) {
             return res.status(400).json({
                 status: "failed",
-                message: "All parameters are required: Username, Email, Password, Confirm Password, and User Type"
+                message: "All parameters are required: Username, Email, Password, Confirm Password, and User Type",
             });
         }
 
@@ -70,7 +74,7 @@ const handleSignup = async (req, res) => {
         if (password !== confirm_password) {
             return res.status(400).json({
                 status: "failed",
-                message: "Password and Confirm Password must match"
+                message: "Password and Confirm Password must match",
             });
         }
 
@@ -79,7 +83,7 @@ const handleSignup = async (req, res) => {
         if (existingUser) {
             return res.status(409).json({
                 status: "failed",
-                message: "User already exists, please login"
+                message: "User already exists, please login",
             });
         }
 
@@ -91,7 +95,7 @@ const handleSignup = async (req, res) => {
             username,
             email,
             password: hashedPassword,
-            user_type
+            user_type,
         });
 
         // Save the new user to the database
@@ -100,10 +104,14 @@ const handleSignup = async (req, res) => {
         // Generate JWT token
         const token = generateToken(savedUser._id, savedUser.toObject());
 
+        // Save token in the user document
+        savedUser.token = token;
+        await savedUser.save();
+
         return res.status(201).json({
             status: "success",
             message: "Signup successful",
-            token
+            token,
         });
 
     } catch (error) {
@@ -111,12 +119,12 @@ const handleSignup = async (req, res) => {
         return res.status(500).json({
             status: "failed",
             message: "An error occurred during signup",
-            error: error.message
+            error: error.message,
         });
     }
 };
 
 module.exports = {
     handleLogin,
-    handleSignup
+    handleSignup,
 };

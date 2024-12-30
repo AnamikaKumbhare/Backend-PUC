@@ -1,17 +1,18 @@
 const { Router } = require('express');
 const { uploadMiddleware, handleMulterError } = require('../middlewares/uploadMiddleware');
-const { handleLogin, handleSignup } = require('../controllers/authController'); // Destructure functions
-const { checkPucValidation } = require('../controllers/pucValidationController');  // Destructure specific function
-const { processImage } = require('../controllers/imageProcessingController');  // Destructure specific function
+const { verifyToken } = require('../middlewares/authMiddleware'); // Import authentication middleware
+const { handleLogin, handleSignup } = require('../controllers/authController'); 
+const { checkPucValidation } = require('../controllers/pucValidationController');  
+const { processImage } = require('../controllers/imageProcessingController');  
 
 const apiRouter = Router();
 
-// Register routes for login and signup
-apiRouter.post('/login', handleLogin);  // Use the specific function for login
-apiRouter.post('/signup', handleSignup);  // Use the specific function for signup
+// Public routes (No authentication required)
+apiRouter.post('/login', handleLogin);  
+apiRouter.post('/signup', handleSignup);  
 
-// Remove authentication middleware for PUC and image processing routes
-apiRouter.post('/puc',uploadMiddleware, handleMulterError, processImage);  // Use the specific function for PUC validation
-apiRouter.post('/image',checkPucValidation);  // Use the specific function for image processing
+// Protected routes (Authentication required)
+apiRouter.post('/puc', verifyToken, uploadMiddleware, handleMulterError, processImage); 
+apiRouter.post('/image', verifyToken, checkPucValidation);  
 
 module.exports = apiRouter;

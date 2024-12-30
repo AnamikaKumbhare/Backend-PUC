@@ -1,19 +1,19 @@
-const jwt = require('jsonwebtoken');
+// hashService.js
 
-// Generate JWT token
-const generateToken = (userId, userData) => {
-    const payload = {
-        iat: Math.floor(Date.now() / 1000), 
-        user_id: userId.toString(), 
-        username: userData.username, 
-        email: userData.email, 
-        user_type: userData.user_type 
-    };
+const bcrypt = require('bcryptjs'); // or bcrypt, depending on which library you're using
 
-    const secretKey = process.env.SECRET_KEY || 'your_default_secret_key';
-    return jwt.sign(payload, secretKey, { algorithm: 'HS256' });
+// Hash password
+const hashPassword = (password) => {
+    const saltRounds = 10;
+    return bcrypt.hashSync(password, saltRounds); // Synchronously hash password
+};
+
+// Check password hash
+const checkPasswordHash = (storedPassword, enteredPassword) => {
+    return bcrypt.compareSync(enteredPassword, storedPassword); // Compare hashed passwords
 };
 
 module.exports = {
-    generateToken
+    hashPassword,
+    checkPasswordHash,
 };
