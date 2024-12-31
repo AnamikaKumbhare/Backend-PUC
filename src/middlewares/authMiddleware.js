@@ -11,7 +11,6 @@ const jwt = require("jsonwebtoken");
 const verifyToken = (req, res, next) => {
   // Extract the Authorization header from the request
   const authHeader = req.headers.authorization;
-  console.log("Authorization Header:", authHeader);
 
   // Check if the header exists and starts with "Bearer "
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -20,12 +19,12 @@ const verifyToken = (req, res, next) => {
 
   // Extract the token part of the Authorization header
   const token = authHeader.split(" ")[1];
-  console.log("Extracted Token:", token);
+  //console.log("Extracted Token:", token);
 
   try {
     // Verify the token using the secret key
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    console.log("Decoded Token:", decoded);
+    console.log("Decoded Token");
 
     req.user = decoded; // Attach decoded user data to the request object
     next(); // Proceed to the next middleware or route handler

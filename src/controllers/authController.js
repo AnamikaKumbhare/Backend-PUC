@@ -1,6 +1,6 @@
 const { hashPassword, checkPasswordHash } = require('../services/AuthServices/hashService');
 const { generateToken } = require('../services/AuthServices/jwtService');
-const User = require('../models/userInfo.modal'); // Mongoose model
+const User = require('../models/userInfo.modal'); 
 
 // Handle Login
 const handleLogin = async (req, res) => {

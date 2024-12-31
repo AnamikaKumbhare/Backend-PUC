@@ -36,11 +36,6 @@ const processOCR = async (extractedFiles) => {
                 contentType: mimeType,
             });
 
-            console.log('Sending request to OCR API with headers:', {
-                ...headers,
-                ...formData.getHeaders(),
-            });
-
             // Send the request to the OCR API
             const response = await axios({
                 method: 'post',
@@ -54,9 +49,6 @@ const processOCR = async (extractedFiles) => {
                 maxBodyLength: Infinity,   // Allow large response sizes
             });
 
-            console.log('OCR API Response Status:', response.status);
-            console.log('OCR API Response Data:', JSON.stringify(response.data, null, 2));
-
             // Parse the API response to extract text
             if (response.data.results && Array.isArray(response.data.results)) {
                 for (const result of response.data.results) {
@@ -68,7 +60,6 @@ const processOCR = async (extractedFiles) => {
                                         for (const subEntity of obj.entities) {
                                             if (subEntity.kind === "text" && subEntity.text) {
                                                 imageProcessedData.push(subEntity.text);
-                                                console.log(`Extracted text: ${subEntity.text}`);
                                             }
                                         }
                                     }
@@ -94,7 +85,7 @@ const processOCR = async (extractedFiles) => {
     if (imageProcessedData.length === 0) {
         console.warn('No text was successfully extracted from any of the images.');
     } else {
-        console.log('Successfully extracted texts:', imageProcessedData);
+        console.log('Successfully extracted texts');
     }
 
     return imageProcessedData;

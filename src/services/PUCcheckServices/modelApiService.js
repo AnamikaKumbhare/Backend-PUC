@@ -118,7 +118,7 @@ const processExternalImage = async (fileBuffer, fileMimeType) => {
             try {
                 await fsp.rm(tempDir, { recursive: true, force: true });
             } catch (cleanupError) {
-                console.error('Error during cleanup:', cleanupError);
+                console.error('Error during cleanup');
             }
         }
     }
