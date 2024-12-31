@@ -1,6 +1,6 @@
 const { Router } = require('express');
 const { uploadMiddleware, handleMulterError } = require('../middlewares/uploadMiddleware');
-const { verifyToken } = require('../middlewares/authMiddleware'); // Import authentication middleware
+const { verifyToken } = require('../middlewares/authMiddleware'); 
 const { handleLogin, handleSignup } = require('../controllers/authController'); 
 const { checkPucValidation } = require('../controllers/pucValidationController');  
 const { processImage } = require('../controllers/imageProcessingController');  

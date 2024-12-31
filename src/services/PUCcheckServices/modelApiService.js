@@ -1,6 +1,6 @@
 const FormData = require('form-data');
-const fs = require('fs'); // Regular fs for streams
-const fsp = require('fs').promises; // Promise-based fs
+const fs = require('fs'); 
+const fsp = require('fs').promises;
 const path = require('path');
 const os = require('os');
 const axios = require('axios');
@@ -9,6 +9,13 @@ const { promisify } = require('util');
 const stream = require('stream');
 const pipeline = promisify(stream.pipeline);
 
+/**
+ * Processes an external image by sending it to an API, extracting a ZIP response, 
+ * and returning the extracted files.
+ * @param {Buffer} fileBuffer - The buffer of the image to process.
+ * @param {string} fileMimeType - The MIME type of the image.
+ * @returns {Promise<Array>} - An array of extracted files with their metadata.
+ */
 const processExternalImage = async (fileBuffer, fileMimeType) => {
     const URL = "http://3.109.211.248/predict";
     let tempDir = null;
@@ -17,13 +24,14 @@ const processExternalImage = async (fileBuffer, fileMimeType) => {
     try {
         console.log("Sending file to external API for processing...");
 
-        // Create FormData and send request
+        // Create a form and append the image file
         const form = new FormData();
         form.append('file', fileBuffer, {
             filename: 'uploaded_image.jpg',
             contentType: fileMimeType,
         });
 
+        // Send the file to the external API
         const response = await axios.post(URL, form, {
             headers: {
                 ...form.getHeaders(),
@@ -31,26 +39,25 @@ const processExternalImage = async (fileBuffer, fileMimeType) => {
             responseType: 'arraybuffer',
         });
 
+        // Ensure the API response is a ZIP file
         if (!response.headers["content-type"].includes("application/zip")) {
             throw new Error("Expected a ZIP file in the API response.");
         }
 
-        // Create unique temporary directory
+        // Create a temporary directory for extraction
         const timestamp = Date.now();
         tempDir = path.join(os.tmpdir(), `extract_${timestamp}`);
         await fsp.mkdir(tempDir, { recursive: true });
 
-        // Write ZIP file
+        // Write the ZIP file to the temporary directory
         zipPath = path.join(tempDir, 'response.zip');
         await fsp.writeFile(zipPath, response.data);
 
-        console.log(`ZIP file written to ${zipPath}`);
-
-        // Create extraction directory
+        // Create a directory for extracting the ZIP contents
         const extractPath = path.join(tempDir, 'extracted');
         await fsp.mkdir(extractPath, { recursive: true });
 
-        // Extract ZIP file using regular fs for createReadStream
+        // Extract the ZIP file to the extraction directory
         await new Promise((resolve, reject) => {
             fs.createReadStream(zipPath)
                 .pipe(unzipper.Extract({ path: extractPath }))
@@ -58,22 +65,21 @@ const processExternalImage = async (fileBuffer, fileMimeType) => {
                 .on('error', reject);
         });
 
-        // Wait a moment for extraction to complete
+        // Pause briefly to ensure extraction is complete
         await new Promise(resolve => setTimeout(resolve, 1000));
 
-        // Read extracted files
+        // Read and process the extracted files
         const extractedFiles = [];
         const files = await fsp.readdir(extractPath);
 
-        console.log('Files found in extracted directory:', files);
-
         for (const file of files) {
-            // Skip macOS metadata
+            // Skip metadata and hidden files
             if (file.startsWith('._') || file.startsWith('.')) continue;
 
             const filePath = path.join(extractPath, file);
             const stats = await fsp.stat(filePath);
 
+            // Collect file details if it's a valid file
             if (stats.isFile()) {
                 const buffer = await fsp.readFile(filePath);
                 const ext = path.extname(file).toLowerCase().slice(1);
@@ -83,20 +89,18 @@ const processExternalImage = async (fileBuffer, fileMimeType) => {
                     buffer: buffer,
                     mimeType: `image/${ext}`,
                 });
-
-                console.log(`Processed file: ${file}`);
             }
         }
 
+        // Ensure at least one valid file was extracted
         if (extractedFiles.length === 0) {
             throw new Error('No valid files found in ZIP');
         }
 
-        console.log(`Successfully extracted ${extractedFiles.length} files`);
         return extractedFiles;
 
     } catch (error) {
-        console.error("Error in processExternalImage:", error.message);
+        // Handle errors and log API error details if available
         if (error.response && error.response.data) {
             const errorData = Buffer.from(error.response.data);
             const errorString = errorData.toString();
@@ -109,11 +113,10 @@ const processExternalImage = async (fileBuffer, fileMimeType) => {
         }
         throw error;
     } finally {
-        // Cleanup temporary files
+        // Clean up temporary files and directories
         if (tempDir) {
             try {
                 await fsp.rm(tempDir, { recursive: true, force: true });
-                console.log(`Cleaned up temporary directory: ${tempDir}`);
             } catch (cleanupError) {
                 console.error('Error during cleanup:', cleanupError);
             }
