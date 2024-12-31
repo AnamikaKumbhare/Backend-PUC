@@ -13,7 +13,9 @@ const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
         origin: "http://localhost:3000", // Frontend URL
-        methods: ["GET", "POST"]
+        methods: ["GET", "POST"],
+        allowedHeaders: ["Authorization", "Content-Type"], // Include Authorization header
+        credentials: true, // Allow credentials
     }
 });
 
@@ -21,7 +23,8 @@ const io = new Server(server, {
 app.use(cors({
     origin: "http://localhost:3000", // Frontend URL
     methods: ["GET", "POST"],
-    credentials: true // Optional, if you're using cookies or other credentials
+    allowedHeaders: ["Authorization", "Content-Type"], // Include Authorization header
+    credentials: true // Allow credentials for cookies or other sensitive data
 }));
 
 const config = new Config().getBaseConfig();
@@ -48,6 +51,7 @@ io.on('connection', (socket) => {
     });
 });
 
+// Connect to MongoDB
 connectToMongoDB();
 
 module.exports = { app, server, config, io };
