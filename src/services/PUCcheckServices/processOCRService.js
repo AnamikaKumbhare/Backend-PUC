@@ -10,7 +10,7 @@ const FormData = require('form-data');
 const processOCR = async (extractedFiles) => {
     // API headers with authentication details
     const headers = {
-        "X-RapidAPI-Key": "546e7062c3mshe4bb231c8d771a4p1c723fjsn3ba8d65b188a",
+        "X-RapidAPI-Key": "5bf67ff773msh6764e300eaa1a26p1c7dd5jsn552837bcc052",
         "X-RapidAPI-Host": "ocr43.p.rapidapi.com",
     };
 
