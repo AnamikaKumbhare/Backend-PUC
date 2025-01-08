@@ -5,6 +5,7 @@ const { handleLogin, handleSignup } = require('../controllers/authController');
 const { checkPucValidation } = require('../controllers/pucValidationController');  
 const { processImage } = require('../controllers/imageProcessingController');  
 const { checkAndCreateRegion } = require('../controllers/regionController');
+const { getRegionStats } = require('../controllers/regionFetchController');
 
 const apiRouter = Router();
 
@@ -16,5 +17,6 @@ apiRouter.post('/signup', handleSignup);
 apiRouter.post('/region', verifyToken, checkAndCreateRegion);
 apiRouter.post('/puc', verifyToken, uploadMiddleware, handleMulterError, processImage); 
 apiRouter.post('/image', verifyToken, checkPucValidation);  
+apiRouter.get('/regionStats/:regionName', verifyToken, getRegionStats);
 
 module.exports = apiRouter;
