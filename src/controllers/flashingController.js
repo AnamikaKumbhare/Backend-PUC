@@ -1,0 +1,206 @@
+const { SerialPort } = require('serialport');
+const { exec } = require('child_process');
+const fs = require('fs').promises;
+const axios = require('axios');
+const path = require('path');
+const os = require('os');
+const util = require('util');
+const execPromise = util.promisify(exec);
+
+// Utility function to get temporary directory path
+const getTempDir = () => {
+    return path.join(os.tmpdir(), 'nodemcu-flash');
+};
+
+// Initialize temp directory
+const initTempDir = async () => {
+    const tempDir = getTempDir();
+    try {
+        await fs.mkdir(tempDir, { recursive: true });
+    } catch (error) {
+        console.error('Error creating temp directory:', error);
+    }
+    return tempDir;
+};
+
+// Clean up temporary files
+const cleanupTempFiles = async (filepath) => {
+    try {
+        await fs.unlink(filepath);
+    } catch (error) {
+        console.error('Error cleaning up temp file:', error);
+    }
+};
+
+// Download firmware from URL
+async function downloadFirmware(url) {
+    const tempDir = await initTempDir();
+    const firmwarePath = path.join(tempDir, `firmware-${Date.now()}.bin`);
+    
+    try {
+        const response = await axios.get(url, {
+            responseType: 'arraybuffer'
+        });
+        await fs.writeFile(firmwarePath, response.data);
+        return firmwarePath;
+    } catch (error) {
+        throw new Error(`Failed to download firmware: ${error.message}`);
+    }
+}
+
+// Flash firmware using esptool.py
+async function flashFirmware(portPath, firmwarePath) {
+    try {
+        // Construct esptool.py command
+        const command = `esptool.py --port ${portPath} --baud 115200 write_flash 0x0 "${firmwarePath}"`;
+        
+        // Execute flashing command
+        const { stdout, stderr } = await execPromise(command);
+        
+        if (stderr && !stderr.includes('Connecting')) {
+            throw new Error(stderr);
+        }
+        
+        return {
+            success: true,
+            output: stdout
+        };
+    } catch (error) {
+        throw new Error(`Flashing failed: ${error.message}`);
+    }
+}
+
+// Controller functions
+const handleDeviceFlash = async (req, res) => {
+    try {
+        const { firmwareUrl, portPath } = req.body;
+        
+        if (!firmwareUrl || !portPath) {
+            return res.status(400).json({
+                success: false,
+                error: 'Missing required parameters'
+            });
+        }
+
+        // Download firmware
+        const firmwarePath = await downloadFirmware(firmwareUrl);
+
+        // Flash device
+        const flashResult = await flashFirmware(portPath, firmwarePath);
+
+        // Cleanup
+        await cleanupTempFiles(firmwarePath);
+
+        res.json({
+            success: true,
+            message: 'Device flashed successfully',
+            details: flashResult.output
+        });
+
+    } catch (error) {
+        console.error('Flashing error:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+};
+
+const checkDeviceHealth = async (req, res) => {
+    try {
+        const ports = await SerialPort.list();
+        console.log('All detected ports:', ports); // Debug log
+
+        // NodeMCU common USB-to-Serial chips
+        const compatibleDevices = [
+            { vendorId: '1a86', productId: '7523' }, // CH340
+            { vendorId: '10c4', productId: 'ea60' }, // CP2102
+            { vendorId: '0403', productId: '6001' }, // FTDI
+            { vendorId: '1a86', productId: '55d4' }  // Another CH340 variant
+        ];
+
+        const hasESPDevice = ports.some(port => {
+            const isCompatible = compatibleDevices.some(device => 
+                port.vendorId?.toLowerCase() === device.vendorId && 
+                port.productId?.toLowerCase() === device.productId
+            );
+            
+            if (isCompatible) {
+                console.log('Found compatible device:', {
+                    path: port.path,
+                    vendorId: port.vendorId,
+                    productId: port.productId,
+                    manufacturer: port.manufacturer
+                });
+            }
+            
+            return isCompatible;
+        });
+
+        // Modified response to include more details
+        res.json({
+            success: true,
+            status: hasESPDevice ? 'Device connected' : 'No device found',
+            deviceFound: hasESPDevice,
+            availablePorts: ports.map(port => ({
+                path: port.path,
+                vendorId: port.vendorId,
+                productId: port.productId,
+                manufacturer: port.manufacturer
+            }))
+        });
+
+    } catch (error) {
+        console.error('Health check error:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message,
+            errorDetails: error.stack
+        });
+    }
+};
+
+const listDevicePorts = async (req, res) => {
+    try {
+        const ports = await SerialPort.list();
+        
+        // Normalize vendorId and productId to lowercase for consistent comparison
+        const espPorts = ports.filter(port => {
+            const vendorId = port.vendorId?.toLowerCase();
+            const productId = port.productId?.toLowerCase();
+            
+            return (
+                (vendorId === '1a86' && productId === '7523') || // CH340
+                (vendorId === '10c4' && productId === 'ea60') || // CP2102
+                (vendorId === '0403' && productId === '6001') || // FTDI
+                (vendorId === '1a86' && productId === '55d4')    // Another CH340 variant
+            );
+        });
+
+        // Enhanced response with more port details
+        res.json({
+            success: true,
+            ports: espPorts.map(port => ({
+                path: port.path,
+                manufacturer: port.manufacturer || 'Unknown',
+                serialNumber: port.serialNumber,
+                vendorId: port.vendorId,
+                productId: port.productId,
+                friendlyName: port.friendlyName || port.path
+            }))
+        });
+
+    } catch (error) {
+        console.error('Port listing error:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+};
+
+module.exports = {
+    handleDeviceFlash,
+    checkDeviceHealth,
+    listDevicePorts
+};
