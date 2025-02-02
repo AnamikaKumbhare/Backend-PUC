@@ -6,6 +6,7 @@ const { Server } = require("socket.io");
 const { connectToMongoDB } = require("./utils/db");
 const { Config } = require("./config/config");
 
+
 const app = express();
 const server = http.createServer(app);
 
@@ -26,7 +27,7 @@ app.use(cors({
     allowedHeaders: ["Authorization", "Content-Type"], 
     credentials: true 
 }));
-
+app.use(express.urlencoded({ extended: true }));
 const config = new Config().getBaseConfig();
 
 app.use(express.json());

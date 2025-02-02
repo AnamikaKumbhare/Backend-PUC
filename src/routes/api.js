@@ -7,18 +7,22 @@ const { processImage } = require('../controllers/imageProcessingController');
 const { checkAndCreateRegion } = require('../controllers/regionController');
 const { getRegionStats } = require('../controllers/regionFetchController');
 
+
 const {
     handleDeviceFlash,
     checkDeviceHealth,
     listDevicePorts,
 } = require('../controllers/flashingController');
 const { validateFlashRequest } = require('../middlewares/flashMiddleware');
+const { receivePollutionData } = require('../controllers/pollutionController');
+
 
 const apiRouter = Router();
 
 // Public routes
 apiRouter.post('/login', handleLogin);
 apiRouter.post('/signup', handleSignup);
+
 
 // Protected routes
 apiRouter.post('/region', verifyToken, checkAndCreateRegion);
@@ -30,5 +34,6 @@ apiRouter.get('/regionStats/:regionName', verifyToken, getRegionStats);
 apiRouter.post('/flash', verifyToken, validateFlashRequest, handleDeviceFlash);
 apiRouter.get('/health', verifyToken, checkDeviceHealth);
 apiRouter.get('/ports', verifyToken, listDevicePorts);
+apiRouter.post('/pollution-data', receivePollutionData);
 
 module.exports = apiRouter;
