@@ -1,5 +1,6 @@
 const { ResponseHandler } = require('../utils/responseHandler');
 const moment = require('moment');
+const websocketService = require('../services/webSockets/webSocketService');
 
 // Constants for pollution thresholds (adjust based on your sensor's specifications)
 const POLLUTION_THRESHOLDS = {
@@ -40,7 +41,9 @@ const receivePollutionData = async (req, res) => {
 
         // Validate required fields
         if (!deviceId || !rawValue) {
-            return ResponseHandler(res, 400, 'Missing required fields. DeviceId and rawValue are required.');
+            const error = 'Missing required fields. DeviceId and rawValue are required.';
+            websocketService.emitToAllClients('pollution_data_error', { error });
+            return ResponseHandler(res, 400, error);
         }
 
         // Convert string values to numbers and validate
@@ -49,7 +52,9 @@ const receivePollutionData = async (req, res) => {
         const numericPPM = ppm ? Number(ppm) : convertToPPM(numericRawValue, numericVoltage);
 
         if (isNaN(numericRawValue) || isNaN(numericVoltage) || isNaN(numericPPM)) {
-            return ResponseHandler(res, 400, 'Invalid numeric values provided');
+            const error = 'Invalid numeric values provided';
+            websocketService.emitToAllClients('pollution_data_error', { error });
+            return ResponseHandler(res, 400, error);
         }
 
         // Format the data
@@ -59,7 +64,7 @@ const receivePollutionData = async (req, res) => {
             voltage: numericVoltage,
             ppm: numericPPM,
             timestamp: moment().format('YYYY-MM-DD HH:mm:ss'),
-            location: req.body.location || 'Unknown', // Optional location data
+            location: req.body.location || 'Unknown',
         };
 
         // Analyze pollution levels
@@ -76,8 +81,8 @@ const receivePollutionData = async (req, res) => {
                 recommendation: isAlert ? 'Consider wearing a mask or staying indoors' : null
             } : null,
             trends: {
-                isIncreasing: null, // You could compare with previous readings from a database
-                percentageChange: null // Calculate if you store historical data
+                isIncreasing: null,
+                percentageChange: null
             }
         };
 
@@ -89,6 +94,9 @@ const receivePollutionData = async (req, res) => {
             airQuality: analysisData.airQuality,
             alert: analysisData.alert ? 'YES' : 'NO'
         });
+
+        // Emit the analyzed data via websocket
+        websocketService.emitToAllClients('pollution_data_update', analysisData);
 
         // Here you would typically save the data to your database
         // await PollutionData.create(pollutionData);
@@ -102,6 +110,12 @@ const receivePollutionData = async (req, res) => {
 
     } catch (error) {
         console.error('Error processing pollution data:', error);
+        // Emit error via websocket
+        websocketService.emitToAllClients('pollution_data_error', { 
+            error: error.message,
+            errorCode: error.code || 'UNKNOWN_ERROR'
+        });
+        
         return ResponseHandler(res, 500, 'Internal server error', { 
             error: error.message,
             errorCode: error.code || 'UNKNOWN_ERROR'
@@ -111,6 +125,6 @@ const receivePollutionData = async (req, res) => {
 
 module.exports = {
     receivePollutionData,
-    calculateAirQuality, // Exported for testing purposes
+    calculateAirQuality,
     POLLUTION_THRESHOLDS
 };
