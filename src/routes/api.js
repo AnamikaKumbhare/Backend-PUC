@@ -15,6 +15,7 @@ const {
 } = require('../controllers/flashingController');
 const { validateFlashRequest } = require('../middlewares/flashMiddleware');
 const { receivePollutionData } = require('../controllers/pollutionController');
+const { getRegionVehicles } = require('../controllers/regionReportController');
 
 
 const apiRouter = Router();
@@ -29,6 +30,7 @@ apiRouter.post('/region', verifyToken, checkAndCreateRegion);
 apiRouter.post('/puc', verifyToken, uploadMiddleware, handleMulterError, processImage);
 apiRouter.post('/image', verifyToken, checkPucValidation);
 apiRouter.get('/regionStats/:regionName', verifyToken, getRegionStats);
+apiRouter.get('/region/:regionName/vehicles', getRegionVehicles);
 
 // Device flashing routes
 apiRouter.post('/flash', verifyToken, validateFlashRequest, handleDeviceFlash);
