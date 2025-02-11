@@ -30,13 +30,6 @@ const savePpmData = async (req, res) => {
       timestamp: new Date()
     });
 
-    // Update counts based on PPM value
-    if (ppm_value <= 150) { // Threshold for valid readings
-      region.valid_count += 1;
-    } else {
-      region.invalid_count += 1;
-    }
-    region.total_count += 1;
 
     // Save the updated region
     await region.save();
