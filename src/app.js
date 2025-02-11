@@ -6,27 +6,28 @@ const { Server } = require("socket.io");
 const { connectToMongoDB } = require("./utils/db");
 const { Config } = require("./config/config");
 
-
 const app = express();
 const server = http.createServer(app);
 
-
+// Updated CORS configuration for Socket.io
 const io = new Server(server, {
     cors: {
         origin: "http://localhost:3000", 
         methods: ["GET", "POST"],
-        allowedHeaders: ["Authorization", "Content-Type"], 
+        allowedHeaders: ["Authorization", "Content-Type", "X-Request-ID"], // Added X-Request-ID
         credentials: true, 
     }
 });
 
-// CORS Middleware to allow requests from the frontend (localhost:3000)
+// Updated CORS Middleware for Express
 app.use(cors({
     origin: "http://localhost:3000", 
     methods: ["GET", "POST"],
-    allowedHeaders: ["Authorization", "Content-Type"], 
+    allowedHeaders: ["Authorization", "Content-Type", "X-Request-ID"], // Added X-Request-ID
+    exposedHeaders: ["X-Request-ID"], // Expose the header in responses
     credentials: true 
 }));
+
 app.use(express.urlencoded({ extended: true }));
 const config = new Config().getBaseConfig();
 
