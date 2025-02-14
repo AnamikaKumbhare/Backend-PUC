@@ -17,6 +17,7 @@ const { validateFlashRequest } = require('../middlewares/flashMiddleware');
 const { receivePollutionData } = require('../controllers/pollutionController');
 const { getRegionVehicles } = require('../controllers/regionReportController');
 const { savePpmData } = require('../controllers/ppmSaverController');
+const { getVehicleCounts } = require('../controllers/vehicleClassController');
 
 
 const apiRouter = Router();
@@ -32,7 +33,8 @@ apiRouter.post('/puc', verifyToken, uploadMiddleware, handleMulterError, process
 apiRouter.post('/image', verifyToken, checkPucValidation);
 apiRouter.get('/regionStats/:regionName', verifyToken, getRegionStats);
 apiRouter.get('/region/:regionName/vehicles', getRegionVehicles);
-apiRouter.post('/ppm-value',savePpmData)
+apiRouter.post('/ppm-value',savePpmData);
+apiRouter.get('/vehicle-count',getVehicleCounts);
 
 // Device flashing routes
 apiRouter.post('/flash', verifyToken, validateFlashRequest, handleDeviceFlash);
