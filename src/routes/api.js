@@ -18,6 +18,7 @@ const { receivePollutionData } = require('../controllers/pollutionController');
 const { getRegionVehicles } = require('../controllers/regionReportController');
 const { savePpmData } = require('../controllers/ppmSaverController');
 const { getVehicleCounts } = require('../controllers/vehicleClassController');
+const { getAllRegions } = require('../controllers/allRegionsController');
 
 
 const apiRouter = Router();
@@ -35,6 +36,7 @@ apiRouter.get('/regionStats/:regionName', verifyToken, getRegionStats);
 apiRouter.get('/region/:regionName/vehicles', getRegionVehicles);
 apiRouter.post('/ppm-value',savePpmData);
 apiRouter.get('/vehicle-count',getVehicleCounts);
+apiRouter.get('/allregions',getAllRegions);
 
 // Device flashing routes
 apiRouter.post('/flash', verifyToken, validateFlashRequest, handleDeviceFlash);
