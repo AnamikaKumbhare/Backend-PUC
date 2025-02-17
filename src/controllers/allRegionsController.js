@@ -11,7 +11,19 @@ const getAllRegions = async (req, res) => {
             total_count: 1
         });
         
-        res.json(regions);
+        // Calculate problem regions based on invalid count percentage
+        const problemRegions = regions
+            .map(region => ({
+                ...region.toObject(),
+                invalid_percentage: (region.invalid_count / region.total_count) * 100
+            }))
+            .sort((a, b) => b.invalid_percentage - a.invalid_percentage)
+            .slice(0, 5);
+
+        res.json({
+            regions,
+            problemRegions
+        });
     } catch (error) {
         console.error('Error fetching regions:', error);
         res.status(500).json({ error: 'Failed to fetch regions' });
