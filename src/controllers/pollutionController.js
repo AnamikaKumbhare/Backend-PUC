@@ -2,7 +2,7 @@ const { ResponseHandler } = require('../utils/responseHandler');
 const moment = require('moment');
 const websocketService = require('../services/webSockets/webSocketService');
 
-// Constants for pollution thresholds (adjust based on your sensor's specifications)
+// Constants for pollution thresholds
 const POLLUTION_THRESHOLDS = {
     GOOD: 50,
     MODERATE: 100,
@@ -27,31 +27,28 @@ const calculateAirQuality = (ppm) => {
 };
 
 /**
- * Convert raw sensor value to estimated PPM
- * Note: This is a simplified conversion - adjust based on your sensor's specifications
+ * Handle incoming pollution data from ESP8266 sensors
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
  */
-const convertToPPM = (rawValue, voltage) => {
-    // Example conversion - replace with your sensor's specific formula
-    return (rawValue * voltage) / 10;
-};
-
 const receivePollutionData = async (req, res) => {
     try {
-        const { deviceId, rawValue, voltage, ppm } = req.body;
+        // Extract data from form-urlencoded format
+        const { deviceId, ppm, voltage, raw } = req.body;
 
         // Validate required fields
-        if (!deviceId || !rawValue) {
-            const error = 'Missing required fields. DeviceId and rawValue are required.';
+        if (!deviceId || !raw) {
+            const error = 'Missing required fields. DeviceId and raw value are required.';
             websocketService.emitToAllClients('pollution_data_error', { error });
             return ResponseHandler(res, 400, error);
         }
 
         // Convert string values to numbers and validate
-        const numericRawValue = Number(rawValue);
+        const numericPPM = Number(ppm);
         const numericVoltage = Number(voltage);
-        const numericPPM = ppm ? Number(ppm) : convertToPPM(numericRawValue, numericVoltage);
+        const numericRawValue = Number(raw);
 
-        if (isNaN(numericRawValue) || isNaN(numericVoltage) || isNaN(numericPPM)) {
+        if (isNaN(numericPPM) || isNaN(numericVoltage) || isNaN(numericRawValue)) {
             const error = 'Invalid numeric values provided';
             websocketService.emitToAllClients('pollution_data_error', { error });
             return ResponseHandler(res, 400, error);
@@ -67,7 +64,7 @@ const receivePollutionData = async (req, res) => {
             location: req.body.location || 'Unknown',
         };
 
-        // Analyze pollution levels
+        // Calculate air quality and determine if alert is needed
         const airQuality = calculateAirQuality(numericPPM);
         const isAlert = numericPPM > POLLUTION_THRESHOLDS.UNHEALTHY;
 
@@ -78,22 +75,18 @@ const receivePollutionData = async (req, res) => {
             alert: isAlert ? {
                 level: airQuality,
                 message: `High pollution level detected: ${numericPPM.toFixed(2)} PPM`,
-                recommendation: isAlert ? 'Consider wearing a mask or staying indoors' : null
-            } : null,
-            trends: {
-                isIncreasing: null,
-                percentageChange: null
-            }
+                recommendation: 'Consider wearing a mask or staying indoors'
+            } : null
         };
 
         // Log the processed data
-        // console.log('Processed pollution data:', {
-        //     timestamp: analysisData.timestamp,
-        //     deviceId: analysisData.deviceId,
-        //     ppm: analysisData.ppm,
-        //     airQuality: analysisData.airQuality,
-        //     alert: analysisData.alert ? 'YES' : 'NO'
-        // });
+        console.log('Processed pollution data:', {
+            timestamp: analysisData.timestamp,
+            deviceId: analysisData.deviceId,
+            ppm: analysisData.ppm,
+            airQuality: analysisData.airQuality,
+            alert: analysisData.alert ? 'YES' : 'NO'
+        });
 
         // Emit the analyzed data via websocket
         websocketService.emitToAllClients('pollution_data_update', analysisData);
@@ -101,24 +94,26 @@ const receivePollutionData = async (req, res) => {
         // Here you would typically save the data to your database
         // await PollutionData.create(pollutionData);
 
+        // Send success response back to the ESP8266
         return ResponseHandler(
             res, 
             200, 
-            'Pollution data processed successfully',
-            analysisData
+            'OK', // Simple response for embedded device
+            { success: true }
         );
 
     } catch (error) {
         console.error('Error processing pollution data:', error);
+        
         // Emit error via websocket
         websocketService.emitToAllClients('pollution_data_error', { 
             error: error.message,
             errorCode: error.code || 'UNKNOWN_ERROR'
         });
         
-        return ResponseHandler(res, 500, 'Internal server error', { 
-            error: error.message,
-            errorCode: error.code || 'UNKNOWN_ERROR'
+        // Send simple error response back to ESP8266
+        return ResponseHandler(res, 500, 'Error', { 
+            success: false
         });
     }
 };
