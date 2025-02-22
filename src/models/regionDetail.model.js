@@ -29,23 +29,20 @@ const regionDetailSchema = new mongoose.Schema({
         type: Number,
         default: 0,
     },
-    ppm_values: [
-        {
-            value: {
-                type: Number,
-                required: true,
-            },
-            timestamp: {
-                type: Date,
-                default: Date.now,
-            },
+    ppm_value: {
+        value: {
+            type: Number,
+            default: null
         },
-    ],
+        timestamp: {
+            type: Date,
+            default: Date.now
+        }
+    },
     registered_numbers: {
         type: [String],
         validate: {
             validator: function (numbers) {
-                // Validate each entry to ensure it's a 10-character alphanumeric string
                 return numbers.every(num => /^[A-Za-z0-9]{10}$/.test(num));
             },
             message: "Each registered number must be a 10-character alphanumeric string.",

@@ -87,13 +87,13 @@ const receivePollutionData = async (req, res) => {
         };
 
         // Log the processed data
-        console.log('Processed pollution data:', {
-            timestamp: analysisData.timestamp,
-            deviceId: analysisData.deviceId,
-            ppm: analysisData.ppm,
-            airQuality: analysisData.airQuality,
-            alert: analysisData.alert ? 'YES' : 'NO'
-        });
+        // console.log('Processed pollution data:', {
+        //     timestamp: analysisData.timestamp,
+        //     deviceId: analysisData.deviceId,
+        //     ppm: analysisData.ppm,
+        //     airQuality: analysisData.airQuality,
+        //     alert: analysisData.alert ? 'YES' : 'NO'
+        // });
 
         // Emit the analyzed data via websocket
         websocketService.emitToAllClients('pollution_data_update', analysisData);
