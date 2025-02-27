@@ -8,7 +8,8 @@ const getAllRegions = async (req, res) => {
             city: 1,
             valid_count: 1,
             invalid_count: 1,
-            total_count: 1
+            total_count: 1,
+            ppm_value: 1  // Added ppm_value field to the projection
         });
         
         // Calculate problem regions based on invalid count percentage
