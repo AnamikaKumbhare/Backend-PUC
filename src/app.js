@@ -12,7 +12,7 @@ const server = http.createServer(app);
 // Updated CORS configuration for Socket.io
 const io = new Server(server, {
     cors: {
-        origin: ["http://localhost:3000","https://ecowatchplus.vercel.app"], 
+        origin: ["http://localhost:3000","https://43.204.97.229:3000"], 
         methods: ["GET", "POST"],
         allowedHeaders: ["Authorization", "Content-Type", "X-Request-ID"], // Added X-Request-ID
         credentials: true, 
