@@ -17,7 +17,7 @@ const pipeline = promisify(stream.pipeline);
  * @returns {Promise<Array>} - An array of extracted files with their metadata.
  */
 const processExternalImage = async (fileBuffer, fileMimeType) => {
-    const URL = "http://43.204.97.229:5000/predict";
+    const URL = "http://3.110.115.61:5000/predict";
     let tempDir = null;
     let zipPath = null;
 
