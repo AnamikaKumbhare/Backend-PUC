@@ -1,3 +1,4 @@
+require('dotenv').config(); // Load environment variables
 const FormData = require('form-data');
 const fs = require('fs'); 
 const fsp = require('fs').promises;
@@ -17,7 +18,11 @@ const pipeline = promisify(stream.pipeline);
  * @returns {Promise<Array>} - An array of extracted files with their metadata.
  */
 const processExternalImage = async (fileBuffer, fileMimeType) => {
-    const URL = "http://3.110.115.61:5000/predict";
+    const URL = process.env.MODEL_URL; // Load API URL from .env
+    if (!URL) {
+        throw new Error("MODEL_URL is not defined in the .env file.");
+    }
+
     let tempDir = null;
     let zipPath = null;
 

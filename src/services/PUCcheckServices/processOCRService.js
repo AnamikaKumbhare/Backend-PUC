@@ -1,3 +1,4 @@
+require('dotenv').config(); // Load environment variables
 const axios = require('axios');
 const FormData = require('form-data');
 
@@ -8,10 +9,17 @@ const FormData = require('form-data');
  * @returns {Promise<Array>} - Array of extracted text from the files.
  */
 const processOCR = async (extractedFiles) => {
+    const OCR_URL = process.env.OCR_URL;
+    const OCR_KEY = process.env.OCR_KEY;
+
+    if (!OCR_URL || !OCR_KEY) {
+        throw new Error("OCR_URL or OCR_KEY is not defined in the .env file.");
+    }
+
     // API headers with authentication details
     const headers = {
-        "X-RapidAPI-Key": "546e7062c3mshe4bb231c8d771a4p1c723fjsn3ba8d65b188a",
-        "X-RapidAPI-Host": "ocr43.p.rapidapi.com",
+        "X-RapidAPI-Key": OCR_KEY,
+        "X-RapidAPI-Host": new URL(OCR_URL).host,
     };
 
     const imageProcessedData = []; // Stores the extracted text data
@@ -39,7 +47,7 @@ const processOCR = async (extractedFiles) => {
             // Send the request to the OCR API
             const response = await axios({
                 method: 'post',
-                url: "https://ocr43.p.rapidapi.com/v1/results",
+                url: OCR_URL,
                 headers: {
                     ...headers,
                     ...formData.getHeaders(),

@@ -12,7 +12,7 @@ const server = http.createServer(app);
 // Updated CORS configuration for Socket.io
 const io = new Server(server, {
     cors: {
-        origin: ["http://localhost:3000","http://3.110.115.61:3000"], 
+        origin: "http://localhost:3000", 
         methods: ["GET", "POST"],
         allowedHeaders: ["Authorization", "Content-Type", "X-Request-ID"], // Added X-Request-ID
         credentials: true, 
@@ -21,7 +21,7 @@ const io = new Server(server, {
 
 // Updated CORS Middleware for Express
 app.use(cors({
-    origin: ["http://localhost:3000","http://3.110.115.61:3000"], 
+    origin: "http://localhost:3000", 
     methods: ["GET", "POST"],
     allowedHeaders: ["Authorization", "Content-Type", "X-Request-ID"], // Added X-Request-ID
     exposedHeaders: ["X-Request-ID"], // Expose the header in responses
