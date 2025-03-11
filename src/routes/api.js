@@ -19,6 +19,7 @@ const { getRegionVehicles } = require('../controllers/regionReportController');
 const { savePpmData } = require('../controllers/ppmSaverController');
 const { getVehicleCounts } = require('../controllers/vehicleClassController');
 const { getAllRegions } = require('../controllers/allRegionsController');
+const { getAirQualityData } = require('../controllers/airQualityController');
 
 
 const apiRouter = Router();
@@ -37,6 +38,7 @@ apiRouter.get('/region/:regionName/vehicles', getRegionVehicles);
 apiRouter.post('/ppm-value',savePpmData);
 apiRouter.get('/vehicle-count',getVehicleCounts);
 apiRouter.get('/allregions',getAllRegions);
+apiRouter.get('/air-quality', getAirQualityData);
 
 // Device flashing routes
 apiRouter.post('/flash', verifyToken, validateFlashRequest, handleDeviceFlash);
