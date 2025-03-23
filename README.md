@@ -10,6 +10,7 @@ Backend repository for the Automated PUC Validation and Pollution Monitoring Sys
 ## 🔗 Links
 
 - [Frontend Repository](https://github.com/Vedarth1/ECOWATCH)
+- [DeepLearning based Detection model](https://github.com/vinayrewatkar/Detection-model)
 - [Demo Video](https://www.youtube.com/watch?v=LqPl6y-Ln9U)
 
 [![Demo Video](https://img.youtube.com/vi/LqPl6y-Ln9U/0.jpg)](https://www.youtube.com/watch?v=LqPl6y-Ln9U)
@@ -34,9 +35,8 @@ This backend system powers the Automated PUC Validation and Pollution Monitoring
 - **Framework**: Express.js
 - **Database**: MongoDB
 - **Authentication**: JWT
-- **Computer Vision Processing**: AWS Lambda & Custom Models
-- **OCR Engine**: Tesseract.js with custom preprocessing
-- **IoT Integration**: Custom APIs for ESP8266/NodeMCU devices
+- **Computer Vision Processing**: AWS Lambda & self made Model
+- **IoT Integration**: ESP8266/NodeMCU device
 - **Cloud Services**: AWS EC2, S3, Lambda
 - **Deployment**: NGINX, PM2
 
@@ -68,7 +68,7 @@ AIR_QUALITY_API_KEY=AIzaSyCAe8XCSFqz8mUlKlSot5AfJZwWOlIDi90
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/your-username/puc-validation-backend.git
+   git clone [https://github.com/your-username/puc-validation-backend.git](https://github.com/AnamikaKumbhare/Backend-PUC)
    cd puc-validation-backend
    ```
 
@@ -162,13 +162,12 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## 👥 Team
 
-- [Your Name](https://github.com/your-username) - Backend Developer
-- [Team Member](https://github.com/team-member) - Frontend Developer
-- [Team Member](https://github.com/team-member) - ML Engineer
+- [Anamika Kumbhare](https://github.com/AnamikaKumbhare) - Backend setup and modification
+- [Vinay Rewatkar](https://github.com/vinayrewatkar) - DataBase configuration and AWS integration
+- [Vinay Rewatkar](https://github.com/vinayrewatkar) - DeepLearning based Model
 
 ## 🙏 Acknowledgements
 
-- [Tesseract.js](https://github.com/naptha/tesseract.js) for OCR capabilities
 - [MongoDB Atlas](https://www.mongodb.com/cloud/atlas) for database hosting
 - [AWS](https://aws.amazon.com/) for cloud infrastructure
 - [Express.js](https://expressjs.com/) for API framework
