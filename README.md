@@ -51,17 +51,11 @@ This backend system powers the Automated PUC Validation and Pollution Monitoring
 
 ### Environment Variables
 
-Create a `.env` file in the root directory with the following variables:
+Create a `.env` file in the root directory with the following variables: contact administrator
 
 ```
 # Server Configuration
-MONGO_URI="mongodb+srv://vinayrewatkar257:V72496%23y@cluster0.iyfwvdd.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
-SECRET_KEY="PUC_Backend"
-JWT_SECRET=f1d7d35f547d1b249b291b9c08398a0db95a9430e5739cdb9c5e53c0e31e3a60
-MODEL_URL=http://13.232.255.41:5000/predict
-OCR_URL=https://ocr43.p.rapidapi.com/v1/results
-OCR_KEY=546e7062c3mshe4bb231c8d771a4p1c723fjsn3ba8d65b188a
-AIR_QUALITY_API_KEY=AIzaSyCAe8XCSFqz8mUlKlSot5AfJZwWOlIDi90
+vinayrewatkar.257@gmail.com
 ```
 
 ### Installation
